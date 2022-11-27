@@ -151,8 +151,8 @@ fn main() -> ! {
     let mut rx_buffer = [0u8; 1536];
     let mut tx_buffer = [0u8; 1536];
     let socket = TcpSocket::new(
-        TcpSocketBuffer::new(&mut rx_buffer[..]),
-        TcpSocketBuffer::new(&mut tx_buffer[..]),
+        TcpSocketBuffer::new(rx_buffer.as_mut_slice()),
+        TcpSocketBuffer::new(tx_buffer.as_mut_slice()),
     );
 
     let tcp_handle = wifi_interface.network_interface().add_socket(socket);
