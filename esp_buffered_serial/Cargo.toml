@@ -1,0 +1,20 @@
+[package]
+name = "esp_buffered_serial"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# For now hard code to esp32c3
+esp32c3-hal = { version = "0.3.0" }
+
+nb = "1.0.0"
+critical-section = "1.1.1"
+enumset = { version = "1", default-features = false }
+heapless = { version = "0.7.14", default-features = false }
+
+once_mut = { path = "../once_mut" }
+
+[patch.crates-io]
+esp32c3-hal = { git = "https://github.com/IsaacDynamo/esp-hal", package = "esp32c3-hal", rev = "e1c0ac540e9ae2182878223bc4801c1ecbd15206" }
