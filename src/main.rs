@@ -250,7 +250,7 @@ fn main() -> ! {
 
         if !tcp_socket.may_send() || uplink_state == UplinkState::Flush {
             // Drop UART data, When there is no connection
-            while let nb::Result::Ok(_) = serial1.read() {}
+            while serial1.read().is_ok() {}
         }
 
         if tcp_socket.state() == TcpState::CloseWait {

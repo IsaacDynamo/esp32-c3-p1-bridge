@@ -2,22 +2,14 @@
 
 use atomic_polyfill::AtomicBool;
 use core::cell::RefCell;
-use core::mem::transmute;
-use core::mem::MaybeUninit;
-use core::default::Default;
-use core::ops::FnOnce;
-use core::option::Option;
-use core::marker::Sync;
+use core::mem::{transmute, MaybeUninit};
 
 pub struct OnceMut<T> {
     used: AtomicBool,
     data: RefCell<MaybeUninit<T>>,
 }
 
-impl<T> OnceMut<T>
-where
-    T: Default,
-{
+impl<T> OnceMut<T> {
     pub const fn new() -> Self {
         Self {
             used: AtomicBool::new(false),
