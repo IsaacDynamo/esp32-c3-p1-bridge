@@ -26,6 +26,8 @@ enumset = { version = "1", default-features = false }
 
 esp_buffered_serial = { path = "esp_buffered_serial" }
 
+static_cell = { version = "1.0.0" }
 
 [patch.crates-io]
 esp32c3-hal = { git = "https://github.com/IsaacDynamo/esp-hal", package = "esp32c3-hal", rev = "e1c0ac540e9ae2182878223bc4801c1ecbd15206" }
+static_cell = { git = "https://github.com/IsaacDynamo/static-cell", branch = "no-panic"}

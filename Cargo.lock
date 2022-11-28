@@ -298,6 +298,7 @@ dependencies = [
  "nb 1.0.0",
  "riscv-rt 0.9.0",
  "smoltcp",
+ "static_cell",
 ]
 
 [[package]]
@@ -334,7 +335,7 @@ dependencies = [
  "esp32c3-hal",
  "heapless",
  "nb 1.0.0",
- "once_mut",
+ "static_cell",
 ]
 
 [[package]]
@@ -452,13 +453,6 @@ name = "no-std-net"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1bcece43b12349917e096cddfa66107277f123e6c96a5aea78711dc601a47152"
-
-[[package]]
-name = "once_mut"
-version = "0.1.0"
-dependencies = [
- "atomic-polyfill 1.0.1",
-]
 
 [[package]]
 name = "paste"
@@ -721,6 +715,14 @@ name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
+
+[[package]]
+name = "static_cell"
+version = "1.0.0"
+source = "git+https://github.com/IsaacDynamo/static-cell?branch=no-panic#41ae6ea6183d12917e314bec08c4aed252ceb7b7"
+dependencies = [
+ "atomic-polyfill 1.0.1",
+]
 
 [[package]]
 name = "strsim"

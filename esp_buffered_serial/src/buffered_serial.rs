@@ -10,7 +10,7 @@ use core::ops::DerefMut;
 use critical_section::Mutex;
 use enumset::EnumSet;
 
-use once_mut::OnceMut;
+use static_cell::StaticCell;
 use crate::optional_pin::*;
 use crate::serial_util::*;
 
@@ -47,7 +47,7 @@ struct IsrPart<I, const NR: usize, const NS: usize> {
 }
 
 pub struct BufferedSerial<I, const NR: usize, const NS: usize> {
-    buffers: OnceMut<Buffers<NR, NS>>,
+    buffers: StaticCell<Buffers<NR, NS>>,
     isr: Mutex<RefCell<Option<IsrPart<I, NR, NS>>>>,
 }
 
@@ -57,7 +57,7 @@ where
 {
     pub const fn new() -> Self {
         Self {
-            buffers: OnceMut::new(),
+            buffers: StaticCell::new(),
             isr: Mutex::new(RefCell::new(None)),
         }
     }
@@ -92,7 +92,7 @@ where
         set_rx_fifo_full_threshold(&mut uart, 16);
         set_tx_fifo_empty_threshold(&mut uart, 16);
 
-        let buffers = self.buffers.take(|| Buffers {
+        let buffers = self.buffers.try_init_with(|| Buffers {
             recv: Queue::default(),
             send: Queue::default(),
         })?;
