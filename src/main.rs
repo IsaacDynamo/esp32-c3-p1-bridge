@@ -25,6 +25,13 @@ use hal::clock::{ClockControl, CpuClock};
 use hal::{pac::Peripherals, Rtc};
 use hal::{
     IO,
+    ledc::{
+        channel::{self, ChannelIFace},
+        timer::{self, TimerIFace},
+        LSGlobalClkSource,
+        LowSpeed,
+        LEDC,
+    },
 };
 
 use enumset::enum_set;
@@ -81,11 +88,95 @@ fn main() -> ! {
 
     esp_wifi::init_heap();
 
-    let system = peripherals.SYSTEM.split();
+    let mut system = peripherals.SYSTEM.split();
     let clocks = ClockControl::configure(system.clock_control, CpuClock::Clock160MHz).freeze();
     let mut rtc = Rtc::new(peripherals.RTC_CNTL);
+    let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
 
+    // Disable watchdog timers
+    rtc.swd.disable();
+    rtc.rwdt.disable();
 
+    // Turn on-board amber and white LEDs off.
+    peripherals.USB_DEVICE.conf0.modify(|_,w| w.usb_pad_enable().clear_bit());
+
+    let mut leds = (
+        io.pins.gpio18.into_push_pull_output(),
+        io.pins.gpio19.into_push_pull_output()
+    );
+
+    leds.0.set_low().unwrap();
+    leds.1.set_low().unwrap();
+
+    // Init GPIO used by RGB LED and hook them to LEDC channels
+    let rgb_gpio = (
+        io.pins.gpio3.into_push_pull_output(),
+        io.pins.gpio4.into_push_pull_output(),
+        io.pins.gpio5.into_push_pull_output()
+    );
+
+    let mut ledc = LEDC::new(
+        peripherals.LEDC,
+        &clocks,
+        &mut system.peripheral_clock_control,
+    );
+    ledc.set_global_slow_clock(LSGlobalClkSource::APBClk);
+    let mut lstimer0 = ledc.get_timer::<LowSpeed>(timer::Number::Timer2);
+
+    lstimer0
+        .configure(timer::config::Config {
+            duty: timer::config::Duty::Duty5Bit,
+            clock_source: timer::LSClockSource::APBClk,
+            frequency: 24u32.kHz(),
+        })
+        .unwrap();
+
+    let mut channel0 = ledc.get_channel(channel::Number::Channel0, rgb_gpio.0);
+    channel0
+        .configure(channel::config::Config {
+            timer: &lstimer0,
+            duty_pct: 10,
+        })
+        .unwrap();
+
+    let mut channel1 = ledc.get_channel(channel::Number::Channel1, rgb_gpio.1);
+        channel1
+            .configure(channel::config::Config {
+                timer: &lstimer0,
+                duty_pct: 10,
+            })
+            .unwrap();
+
+    let mut channel2 = ledc.get_channel(channel::Number::Channel2, rgb_gpio.2);
+        channel2
+            .configure(channel::config::Config {
+                timer: &lstimer0,
+                duty_pct: 10,
+            })
+            .unwrap();
+
+    // Update duty cycles. This is done directly by touching the hardware registers. It relies on the side effects of the above setup code.
+    fn set_rgb(r: u32, g: u32, b: u32)
+    {
+        let raw_ledc = unsafe { &*hal::pac::LEDC::ptr() };
+
+        raw_ledc.ch0_duty.write(|w| w.duty().variant(r));
+        raw_ledc.ch0_conf1.modify(|_,w| w.duty_start().set_bit());  // SC, Self Clear
+        raw_ledc.ch0_conf0.modify(|_,w| w.para_up().set_bit());     // TW, Write Trigger
+
+        raw_ledc.ch1_duty.write(|w| w.duty().variant(g));
+        raw_ledc.ch1_conf1.modify(|_,w| w.duty_start().set_bit());  // SC, Self Clear
+        raw_ledc.ch1_conf0.modify(|_,w| w.para_up().set_bit());     // TW, Write Trigger
+
+        raw_ledc.ch2_duty.write(|w| w.duty().variant(b));
+        raw_ledc.ch2_conf1.modify(|_,w| w.duty_start().set_bit());  // SC, Self Clear
+        raw_ledc.ch2_conf0.modify(|_,w| w.para_up().set_bit());     // TW, Write Trigger
+    }
+
+    // Make RGB LED red
+    set_rgb(16, 0, 0);
+
+    // Setup UART
     let config = Config {
         baudrate: 115200,
         data_bits: DataBits::DataBits8,
@@ -93,9 +184,6 @@ fn main() -> ! {
         stop_bits: StopBits::STOP1,
         inverse: enum_set!(Inverse::Rx),
     };
-
-    let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
-
 
     let pins = Pins {
         tx: io.pins.gpio1.into_push_pull_output(), //UnconnectedPin,
@@ -106,9 +194,6 @@ fn main() -> ! {
 
     let mut serial1 = SERIAL.init(peripherals.UART1, config, pins, &clocks).unwrap();
 
-    // Disable watchdog timers
-    rtc.swd.disable();
-    rtc.rwdt.disable();
 
     let mut storage = create_network_stack_storage!(2, 8, 1, 1);
     let ethernet = create_network_interface(network_stack_storage!(storage));
@@ -137,6 +222,9 @@ fn main() -> ! {
 
     println!("status = {:?}", wifi_interface.get_status().0);
 
+    // Make RGB led blue
+    set_rgb(0, 0, 16);
+
     while !is_connected(&wifi_interface) {
         wifi_interface.poll_dhcp().unwrap();
 
@@ -147,6 +235,9 @@ fn main() -> ! {
     }
 
     println!("status = {:?}", wifi_interface.get_status().0);
+
+    // Make RGB led green
+    set_rgb(0, 16, 0);
 
     let mut rx_buffer = [0u8; 1536];
     let mut tx_buffer = [0u8; 1536];
