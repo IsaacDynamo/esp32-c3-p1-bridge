@@ -1,6 +1,9 @@
 #![no_std]
 #![no_main]
 
+mod rgb;
+use rgb::*;
+
 use esp32c3_hal as hal;
 
 use embedded_svc::wifi::{
@@ -163,25 +166,10 @@ fn main() -> ! {
         })
         .unwrap();
 
-    // Update duty cycles. This is done directly by touching the hardware registers. It relies on the side effects of the above setup code.
-    fn set_rgb(r: u32, g: u32, b: u32) {
-        let raw_ledc = unsafe { &*hal::pac::LEDC::ptr() };
-
-        raw_ledc.ch0_duty.write(|w| w.duty().variant(r));
-        raw_ledc.ch0_conf1.modify(|_, w| w.duty_start().set_bit()); // SC, Self Clear
-        raw_ledc.ch0_conf0.modify(|_, w| w.para_up().set_bit()); // TW, Write Trigger
-
-        raw_ledc.ch1_duty.write(|w| w.duty().variant(g));
-        raw_ledc.ch1_conf1.modify(|_, w| w.duty_start().set_bit()); // SC, Self Clear
-        raw_ledc.ch1_conf0.modify(|_, w| w.para_up().set_bit()); // TW, Write Trigger
-
-        raw_ledc.ch2_duty.write(|w| w.duty().variant(b));
-        raw_ledc.ch2_conf1.modify(|_, w| w.duty_start().set_bit()); // SC, Self Clear
-        raw_ledc.ch2_conf0.modify(|_, w| w.para_up().set_bit()); // TW, Write Trigger
-    }
+    let rgb = Rgb::new(&channel0, &channel1, &channel2);
 
     // Make RGB LED red
-    set_rgb(16, 0, 0);
+    rgb.set(1, 0, 0);
 
     // Setup UART
     let config = Config {
@@ -231,7 +219,7 @@ fn main() -> ! {
     println!("status = {:?}", wifi_interface.get_status().0);
 
     // Make RGB led blue
-    set_rgb(0, 0, 16);
+    rgb.set(0, 0, 1);
 
     while !is_connected(&wifi_interface) {
         wifi_interface.poll_dhcp().unwrap();
@@ -245,7 +233,7 @@ fn main() -> ! {
     println!("status = {:?}", wifi_interface.get_status().0);
 
     // Make RGB led green
-    set_rgb(0, 16, 0);
+    rgb.set(0, 1, 0);
 
     let mut rx_buffer = [0u8; 1536];
     let mut tx_buffer = [0u8; 1536];
