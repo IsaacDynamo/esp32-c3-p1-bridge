@@ -1,6 +1,2 @@
-/.vscode
-/.embuild
-/target
-/Cargo.lock
 /ssid.txt
 /password.txt

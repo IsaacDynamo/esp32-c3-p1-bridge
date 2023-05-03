@@ -1,33 +1,10 @@
-[package]
-name = "esp32-c3-p1-bridge"
-version = "0.1.0"
-edition = "2021"
+[workspace]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+members = [
+    "p1_parser",
+    "bridge",
+]
 
-[dependencies]
-riscv-rt = { version = "0.9.0" }
-esp32c3-hal = { version = "0.3.0" }
-nb = "1.0.0"
-
-log = "0.4.17"
-esp-println = { version = "0.3.1", features = [ "esp32c3", "log" ] }
-esp-backtrace = { version = "0.3.0" , features = [ "esp32c3", "panic-handler", "exception-handler", "print-uart" ] }
-
-esp-wifi = { git = "https://github.com/esp-rs/esp-wifi", rev = "a0a6b5fbcf7272eb9730e76b51f8109c13fda9ea", features = ["esp32c3", "embedded-svc", "wifi"]}
-smoltcp = { version = "0.8.0", default-features=false, features = ["proto-igmp", "proto-ipv4", "socket-tcp", "socket-icmp", "socket-udp", "medium-ethernet", "proto-dhcpv4", "socket-raw", "socket-dhcpv4"] }
-embedded-svc = { version = "0.22.1", default-features = false, features = [] }
-embedded-io = "0.3.0"
-heapless = { version = "0.7.14", default-features = false }
-
-atomic-polyfill = { version = "1.0.1" }
-critical-section = "1.1.1"
-enumset = { version = "1", default-features = false }
-
-esp_buffered_serial = { path = "esp_buffered_serial" }
-
-static_cell = { version = "1.0.0" }
-
-[patch.crates-io]
-esp32c3-hal = { git = "https://github.com/IsaacDynamo/esp-hal", package = "esp32c3-hal", rev = "e1c0ac540e9ae2182878223bc4801c1ecbd15206" }
-static_cell = { git = "https://github.com/IsaacDynamo/static-cell", branch = "no-panic"}
+# Removing 'bridge' from default-members fixes 'cargo build' and 'cargo test',
+# because 'bridge' will not compile successfully for the host arch.
+default-members = ["p1_parser"]

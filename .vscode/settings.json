@@ -1,0 +1,7 @@
+{
+    // Recommended by https://ferrous-systems.com/blog/test-embedded-app/#structuring-the-project-for-host--and-cross-compilation
+    "rust-analyzer.linkedProjects": [
+        "Cargo.toml",
+        "bridge/Cargo.toml",
+    ]
+}

@@ -1,4 +1,3 @@
 /target
-ssid.txt
-password.txt
-p1_parser/test_data.txt
+/p1_parser/test_data.txt
+/.embuild
