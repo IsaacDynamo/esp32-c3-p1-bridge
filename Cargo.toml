@@ -2,9 +2,12 @@
 
 members = [
     "p1_parser",
+    "message",
+    "client",
     "bridge",
 ]
 
 # Removing 'bridge' from default-members fixes 'cargo build' and 'cargo test',
 # because 'bridge' will not compile successfully for the host arch.
-default-members = ["p1_parser"]
+# See https://ferrous-systems.com/blog/test-embedded-app/#structuring-the-project-for-host--and-cross-compilation
+default-members = ["p1_parser", "message", "client"]
