@@ -25,6 +25,9 @@ libc = "0.2"
 log = "0.4"
 heapless = "0.7.16"
 thiserror = "1.0.38"
+p1_parser = { path = "../p1_parser" }
+message = { path = "../message" }
+postcard = "1.0.4"
 
 [build-dependencies]
 embuild = "0.30.4"
