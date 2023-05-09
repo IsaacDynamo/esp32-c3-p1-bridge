@@ -4,10 +4,9 @@ members = [
     "p1_parser",
     "message",
     "client",
-    "bridge",
 ]
 
-# Removing 'bridge' from default-members fixes 'cargo build' and 'cargo test',
-# because 'bridge' will not compile successfully for the host arch.
+# 'bridge' is not a member because it will not compile successfully for the host arch.
 # See https://ferrous-systems.com/blog/test-embedded-app/#structuring-the-project-for-host--and-cross-compilation
-default-members = ["p1_parser", "message", "client"]
+# This method will result in two .lock files.
+exclude = ["bridge"]

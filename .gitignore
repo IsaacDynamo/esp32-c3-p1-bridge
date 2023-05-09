@@ -1,3 +1,5 @@
-/target
+target
 /p1_parser/test_data.txt
-/.embuild
+.embuild
+ssid.txt
+password.txt
