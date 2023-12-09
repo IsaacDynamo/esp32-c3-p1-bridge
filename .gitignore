@@ -3,3 +3,7 @@ target
 .embuild
 ssid.txt
 password.txt
+user.txt
+database.txt
+target.txt
+.env

@@ -9,3 +9,6 @@ edition = "2021"
 anyhow = "1.0.71"
 message = { path = "../message" }
 postcard = "1.0.4"
+sqlx = { version = "0.6.3", features = ["runtime-tokio-rustls", "mysql", "chrono"] }
+tokio = { version = "1.28.0", features = ["macros"] }
+chrono = "0.4.24"

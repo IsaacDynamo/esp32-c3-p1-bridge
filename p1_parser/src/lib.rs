@@ -2,26 +2,33 @@
 
 use core::option::Option;
 use heapless::{String, Vec};
+use chrono::{Utc, NaiveDateTime, FixedOffset, DateTime};
 
-fn parse_unit(s: &str, u: &str) -> Option<f32> {
+// Parse number with 3 fractional digits and return as milis
+fn parse_unit_mili(s: &str, u: &str) -> Option<u32> {
     let (v, t) = s.split_once('*')?;
-    let x = v.parse::<f32>().ok()?;
-    (t == u).then_some(x)
+    let (i, f) = v.split_once('.')?;
+    let i = i.parse::<u32>().ok()?;
+    (f.len() == 3).then_some(())?;
+    let f = f.parse::<u32>().ok()?;
+    (t == u).then_some(i * 1000 + f)
 }
 
-#[derive(Debug)]
-pub enum DateTime {
-    Winter(u64),
-    Summer(u64),
-}
+fn parse_datetime(s: &str) -> Option<u64> {
 
-fn parse_datetime(s: &str) -> Option<DateTime> {
-    let datetime = s.get(..12)?.parse::<u64>().ok()?;
-    match s.get(12..)? {
-        "W" => Some(DateTime::Winter(datetime)),
-        "S" => Some(DateTime::Summer(datetime)),
+    const SECONDS_PER_HOUR: i32 = 3600;
+    let offset = match s.get(12..)? {
+        // Assume CEST
+        "W" => Some(FixedOffset::east_opt(1 * SECONDS_PER_HOUR)?), // UTC+1
+        "S" => Some(FixedOffset::east_opt(2 * SECONDS_PER_HOUR)?), // UTC+2
         _ => None,
-    }
+    }?;
+
+    let local = NaiveDateTime::parse_from_str(s.get(..12)?, "%y%m%d%H%M%S").ok()?;
+    let datetime = DateTime::<FixedOffset>::from_local(local, offset);
+    let utc = datetime.with_timezone(&Utc);
+
+    utc.timestamp().try_into().ok()
 }
 
 fn parse_line<'a>(line: &'a str) -> Option<Event<'a>> {
@@ -38,10 +45,10 @@ fn parse_line<'a>(line: &'a str) -> Option<Event<'a>> {
 
     let event = match (id, values.len()) {
         ("0-0:1.0.0", 1) => Timestamp(parse_datetime(values[0])?),
-        ("1-0:1.8.1", 1) => MeterTariff1(parse_unit(values[0], "kWh")?),
-        ("1-0:1.8.2", 1) => MeterTariff2(parse_unit(values[0], "kWh")?),
-        ("1-0:1.7.0", 1) => Power(parse_unit(values[0], "kW")?),
-        ("0-1:24.2.1", 2) => Gas(parse_datetime(values[0])?, parse_unit(values[1], "m3")?),
+        ("1-0:1.8.1", 1) => MeterTariff1(parse_unit_mili(values[0], "kWh")?),
+        ("1-0:1.8.2", 1) => MeterTariff2(parse_unit_mili(values[0], "kWh")?),
+        ("1-0:1.7.0", 1) => Power(parse_unit_mili(values[0], "kW")?),
+        ("0-1:24.2.1", 2) => Gas(parse_datetime(values[0])?, parse_unit_mili(values[1], "m3")?),
         _ => return None,
     };
 
@@ -157,11 +164,11 @@ impl<const N: usize> Parser<N> {
 #[derive(Debug)]
 pub enum Event<'a> {
     Begin(&'a str),
-    Timestamp(DateTime),
-    MeterTariff1(f32),
-    MeterTariff2(f32),
-    Power(f32),
-    Gas(DateTime, f32),
+    Timestamp(u64),
+    MeterTariff1(u32),  // Wh
+    MeterTariff2(u32),  // Wh
+    Power(u32),         // W
+    Gas(u64, u32),      // L
     Raw(&'a str),
     Crc(&'a str),
     Overflow,
@@ -182,6 +189,12 @@ mod tests {
                 println!("{:?}", event);
             }
         }
+    }
+
+    #[test]
+    fn timestamp() {
+        let x = parse_datetime("221121223626W");
+        assert!(x.is_some());
     }
 
     #[test]

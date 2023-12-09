@@ -3,11 +3,12 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Default, Copy, Clone)]
 pub struct Message {
-    timestamp: u64,
-    power: f32,
-    tariff1: f32,
-    tariff2: f32,
-    gas: f32,
+    pub timestamp: u64,
+    pub power: u32,
+    pub tariff1: u32,
+    pub tariff2: u32,
+    pub gas_timestamp: u64,
+    pub gas: u32,
 }
 
 pub struct Builder {
@@ -27,12 +28,14 @@ impl Builder {
         if let Some(event) = self.parser.parse(c) {
             match event {
                 Event::Begin(_) => self.result = Message::default(),
-                Event::Timestamp(DateTime::Summer(x)) => self.result.timestamp = x,
-                Event::Timestamp(DateTime::Winter(x)) => self.result.timestamp = x,
+                Event::Timestamp(ts) => self.result.timestamp = ts,
                 Event::MeterTariff1(x) => self.result.tariff1 = x,
                 Event::MeterTariff2(x) => self.result.tariff2 = x,
                 Event::Power(x) => self.result.power = x,
-                Event::Gas(_, x) => self.result.gas = x,
+                Event::Gas(ts, x) => {
+                    self.result.gas_timestamp = ts;
+                    self.result.gas = x;
+                },
                 Event::Raw(_) => (),
                 Event::Crc(_) => return Some(&self.result),
                 Event::Overflow => (),
