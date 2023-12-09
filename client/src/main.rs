@@ -98,21 +98,19 @@ async fn server_loop(pool: &Pool<MySql>) -> Result<()> {
             insert_db(&pool, &mut context, msg).await?;
         }
     }
-
-    Ok(())
 }
 
 fn ts_convert(timestamp: u64) -> Result<DateTime<Utc>> {
     let unix = NaiveDateTime::from_timestamp_opt(timestamp as i64, 0)
         .ok_or(anyhow::anyhow!("Bad timestamp"))?;
-    DateTime::<Utc>::from_utc(unix, Utc);
+    Ok(DateTime::<Utc>::from_utc(unix, Utc))
 }
 
 async fn insert_db(pool: &Pool<MySql>, context: &mut Context, msg: Message) -> Result<()> {
     let timestamp = ts_convert(msg.timestamp)?;
     let gas_timestamp = ts_convert(msg.gas_timestamp)?;
 
-    let add = sqlx::query!(
+    let _ = sqlx::query!(
         "
         INSERT INTO power (
             timestamp, power
