@@ -9,11 +9,11 @@ default:
 
 # Build ESP32 bridge firmware
 bridge:
-	. ~/export-esp.sh && cd bridge && cargo build
+	. ~/export-esp.sh && cd bridge && cargo build --release
 
 # Flash ESP32 board
 flash:
-	. ~/export-esp.sh && cd bridge && cargo run
+	. ~/export-esp.sh && cd bridge && cargo run --release
 
 # Pull cross compiler to build Synology NAS client executable
 pull:

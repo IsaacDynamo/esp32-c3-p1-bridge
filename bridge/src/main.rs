@@ -69,6 +69,9 @@ fn main() -> Result<()> {
     let sysloop = EspSystemEventLoop::take()?;
     let wifi = Box::new(EspWifi::new(peripherals.modem, sysloop.clone(), None)?);
 
+    // Init task watchdog
+    esp_idf_sys::esp!(unsafe { esp_idf_sys::esp_task_wdt_init(120, true) })?;
+
     // Spawn wifi connection thread
     thread::Builder::new()
         .stack_size(16 * 1024)
@@ -149,6 +152,9 @@ fn status_leds(ledc: LEDC, red: Gpio3, green: Gpio4, blue: Gpio5) -> Result<()> 
 fn server() -> Result<()> {
     const MAX_CLIENTS: usize = 3;
     const MAX_POLLFDS: usize = 1 + MAX_CLIENTS;
+
+    // Add this task to the task watchdog list
+    esp_idf_sys::esp!(unsafe { esp_idf_sys::esp_task_wdt_add(std::ptr::null_mut()) })?;
 
     let listener = TcpListener::bind("0.0.0.0:8080")?;
     let mut clients: Vec<TcpStream, MAX_CLIENTS> = Vec::new();
@@ -248,6 +254,9 @@ fn server() -> Result<()> {
             let data = to_vec::<_, 128>(&msg)?;
             for stream in clients.iter_mut() {
                 stream.write_all(data.as_slice()).unwrap();
+
+                // Reset task watchdog when sending data
+                esp_idf_sys::esp!(unsafe { esp_idf_sys::esp_task_wdt_reset() })?;
             }
         }
 
