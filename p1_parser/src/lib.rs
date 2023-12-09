@@ -1,8 +1,8 @@
 #![cfg_attr(not(test), no_std)]
 
+use chrono::{DateTime, FixedOffset, NaiveDateTime, Utc};
 use core::option::Option;
 use heapless::{String, Vec};
-use chrono::{Utc, NaiveDateTime, FixedOffset, DateTime};
 
 // Parse number with 3 fractional digits and return as milis
 fn parse_unit_mili(s: &str, u: &str) -> Option<u32> {
@@ -15,7 +15,6 @@ fn parse_unit_mili(s: &str, u: &str) -> Option<u32> {
 }
 
 fn parse_datetime(s: &str) -> Option<u64> {
-
     const SECONDS_PER_HOUR: i32 = 3600;
     let offset = match s.get(12..)? {
         // Assume CEST
@@ -48,7 +47,10 @@ fn parse_line<'a>(line: &'a str) -> Option<Event<'a>> {
         ("1-0:1.8.1", 1) => MeterTariff1(parse_unit_mili(values[0], "kWh")?),
         ("1-0:1.8.2", 1) => MeterTariff2(parse_unit_mili(values[0], "kWh")?),
         ("1-0:1.7.0", 1) => Power(parse_unit_mili(values[0], "kW")?),
-        ("0-1:24.2.1", 2) => Gas(parse_datetime(values[0])?, parse_unit_mili(values[1], "m3")?),
+        ("0-1:24.2.1", 2) => Gas(
+            parse_datetime(values[0])?,
+            parse_unit_mili(values[1], "m3")?,
+        ),
         _ => return None,
     };
 
@@ -165,10 +167,10 @@ impl<const N: usize> Parser<N> {
 pub enum Event<'a> {
     Begin(&'a str),
     Timestamp(u64),
-    MeterTariff1(u32),  // Wh
-    MeterTariff2(u32),  // Wh
-    Power(u32),         // W
-    Gas(u64, u32),      // L
+    MeterTariff1(u32), // Wh
+    MeterTariff2(u32), // Wh
+    Power(u32),        // W
+    Gas(u64, u32),     // L
     Raw(&'a str),
     Crc(&'a str),
     Overflow,

@@ -35,7 +35,7 @@ impl Builder {
                 Event::Gas(ts, x) => {
                     self.result.gas_timestamp = ts;
                     self.result.gas = x;
-                },
+                }
                 Event::Raw(_) => (),
                 Event::Crc(_) => return Some(&self.result),
                 Event::Overflow => (),
